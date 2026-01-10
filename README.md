@@ -1,0 +1,190 @@
+# zapret-daemon
+
+Демон-сервис для управления zapret с интерфейсом командной строки. Использует Twirp RPC для коммуникации между клиентом и демоном.
+
+## Возможности
+
+- Демон-сервис с поддержкой Unix socket и сетевых соединений
+- CLI клиент для управления демоном
+- Структурированное логирование с помощью slog
+- Конфигурация через YAML или переменные окружения
+- RPC коммуникация через Twirp (совместимость с HTTP/1.1 и HTTP/2)
+
+## Требования
+
+- Go 1.21+
+- protoc (Protocol Buffers compiler)
+
+## Установка
+
+### Установка зависимостей
+
+```bash
+# Установить protoc (если еще не установлен)
+# Linux:
+mkdir -p ~/bin
+cd /tmp
+curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protoc-28.3-linux-x86_64.zip
+unzip protoc-28.3-linux-x86_64.zip -d protoc-install
+cp protoc-install/bin/protoc ~/bin/
+rm -rf protoc-28.3-linux-x86_64.zip protoc-install
+
+# Установить Go плагины для protoc
+make install-tools
+```
+
+### Сборка
+
+```bash
+# Сгенерировать protobuf код и собрать все бинарники
+make build
+
+# Или по отдельности:
+make proto    # Генерация protobuf/twirp кода
+make daemon   # Сборка демона
+make cli      # Сборка CLI
+```
+
+Бинарники будут созданы в директории `out/bin/`:
+- `out/bin/zapret-daemon` - демон-сервис
+- `out/bin/zapret` - CLI клиент
+
+## Конфигурация
+
+Создайте файл конфигурации на основе примера:
+
+```bash
+cp configs/config.example.yaml /etc/zapret/config.yaml
+```
+
+Пример конфигурации:
+
+```yaml
+server:
+  # Unix socket (по умолчанию)
+  socket_path: "/var/run/zapret-daemon.sock"
+
+  # Сетевой адрес (опционально)
+  # network_address: "localhost:8080"
+
+  socket_permissions: 0660
+
+logging:
+  level: "info"    # debug, info, warn, error
+  format: "text"   # text, json
+```
+
+### Переменные окружения
+
+Конфигурацию можно переопределить через переменные окружения:
+
+```bash
+ZAPRET_SOCKET_PATH=/tmp/zapret.sock
+ZAPRET_NETWORK_ADDRESS=:8080
+ZAPRET_LOG_LEVEL=debug
+ZAPRET_LOG_FORMAT=json
+```
+
+## Использование
+
+### Запуск демона
+
+```bash
+# С конфигом по умолчанию (/etc/zapret/config.yaml)
+./out/bin/zapret-daemon serve
+
+# С произвольным конфигом
+./out/bin/zapret-daemon serve --config /path/to/config.yaml
+```
+
+### CLI команды
+
+```bash
+# Перезапустить демон
+./out/bin/zapret restart
+
+# Принудительный перезапуск
+./out/bin/zapret restart --force
+
+# С указанием конкретного сокета
+./out/bin/zapret restart --socket /var/run/zapret-daemon.sock
+
+# С указанием сетевого адреса
+./out/bin/zapret restart --address localhost:8080
+```
+
+## Архитектура
+
+```
+zapret-nix/
+├── cmd/
+│   ├── zapret-daemon/     # Демон-сервис
+│   │   ├── main.go
+│   │   └── cmd/
+│   │       ├── root.go
+│   │       └── serve.go
+│   └── zapret/            # CLI клиент
+│       ├── main.go
+│       └── cmd/
+│           ├── root.go
+│           ├── dialer.go
+│           └── restart.go
+├── rpc/
+│   └── daemon/
+│       ├── service.proto       # Protobuf определение
+│       ├── service.pb.go       # Сгенерированные сообщения
+│       └── service.twirp.go    # Сгенерированный Twirp сервер/клиент
+├── internal/
+│   ├── config/            # Конфигурация (cleanenv)
+│   │   └── config.go
+│   └── daemonserver/      # Реализация RPC сервиса
+│       └── server.go
+├── configs/
+│   └── config.example.yaml
+└── Makefile
+```
+
+## Разработка
+
+### Генерация protobuf кода
+
+После изменения `rpc/daemon/service.proto`:
+
+```bash
+make proto
+```
+
+### Форматирование кода
+
+```bash
+go fmt ./...
+```
+
+### Очистка
+
+```bash
+make clean
+```
+
+## Технологии
+
+- [Cobra](https://github.com/spf13/cobra) - CLI framework
+- [cleanenv](https://github.com/ilyakaznacheev/cleanenv) - конфигурация
+- [Twirp](https://github.com/twitchtv/twirp) - RPC framework
+- [slog](https://pkg.go.dev/log/slog) - структурированное логирование
+- [Protocol Buffers](https://protobuf.dev/) - сериализация
+
+## Best Practices
+
+Проект следует best practices Twirp:
+
+- Protobuf файлы содержат полную документацию
+- Отдельные пакеты для RPC определений и реализации
+- Всегда возвращаем `twirp.Error` из RPC методов
+- Структурированное логирование через hooks
+- Поддержка Unix sockets для локальной коммуникации
+- Graceful shutdown с таймаутом
+
+## Лицензия
+
+MIT

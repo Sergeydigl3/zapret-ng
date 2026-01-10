@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package daemon;
+
+option go_package = "github.com/zapret/zapret-daemon/rpc/daemon";
+
+// ZapretDaemon service provides control operations for the zapret daemon.
+service ZapretDaemon {
+  // Restart restarts the zapret daemon service.
+  // Returns empty response on success, or error if restart failed.
+  rpc Restart(RestartRequest) returns (RestartResponse);
+}
+
+// RestartRequest is the request message for restarting the daemon.
+message RestartRequest {
+  // force indicates whether to force restart even if the daemon is busy.
+  // (default: false)
+  bool force = 1;
+}
+
+// RestartResponse is the response message after restarting the daemon.
+message RestartResponse {
+  // message contains a status message about the restart operation.
+  string message = 1;
+
+  // restarted_at contains the timestamp when the daemon was restarted (RFC3339 format).
+  string restarted_at = 2;
+}

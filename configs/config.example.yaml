@@ -1,0 +1,25 @@
+# Zapret Daemon Configuration
+# Copy this file to config.yaml and adjust settings as needed
+
+# Server configuration
+server:
+  # Socket path for Unix domain socket (default)
+  # Leave empty to disable Unix socket
+  socket_path: "/var/run/zapret-daemon.sock"
+
+  # Network address for TCP socket (optional)
+  # Format: "host:port" or ":port"
+  # Leave empty to disable network listening
+  # Example: "localhost:8080" or ":8080"
+  network_address: ""
+
+  # Socket file permissions (octal format)
+  socket_permissions: 0660
+
+# Logging configuration
+logging:
+  # Log level: debug, info, warn, error
+  level: "info"
+
+  # Log format: json, text
+  format: "text"

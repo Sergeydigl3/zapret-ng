@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+# Copyright 2026 Zapret Project
+# Distributed under the terms of the MIT License
+
+name="zapret-daemon"
+description="Zapret Daemon Service"
+
+command="/usr/bin/zapret-daemon"
+command_args="serve --config /etc/zapret/config.yaml"
+command_background="yes"
+pidfile="/var/run/${RC_SVCNAME}.pid"
+
+start_stop_daemon_args="--stdout /var/log/${RC_SVCNAME}.log --stderr /var/log/${RC_SVCNAME}.log"
+
+depend() {
+    need net
+    after firewall
+}
+
+start_pre() {
+    checkpath --directory --mode 0755 /var/run/zapret
+}

@@ -1,0 +1,230 @@
+version: 2
+
+dist: out/dist
+
+before:
+  hooks:
+    - go mod tidy
+    - make proto
+
+builds:
+  - id: zapret-daemon
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - 386
+    goarm:
+      - "6"
+      - "7"
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: zapret-cli
+    main: ./cmd/zapret
+    binary: zapret
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - 386
+    goarm:
+      - "6"
+      - "7"
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - README.md
+      - LICENSE*
+      - configs/config.example.yaml
+      - init/systemd/zapret-daemon.service
+      - init/openrc/zapret-daemon
+      - init/sysvinit/zapret-daemon
+
+nfpms:
+  - id: packages
+    package_name: zapret-daemon
+    vendor: Zapret Project
+    homepage: https://github.com/Sergeydigl3/zapret-daemon
+    maintainer: Sergeydigl3
+    description: |
+      Демон-сервис для управления zapret с интерфейсом командной строки.
+      Использует Twirp RPC для коммуникации между клиентом и демоном.
+    license: MIT
+
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+
+    dependencies:
+      - iptables
+
+    recommends:
+      - systemd
+
+    bindir: /usr/bin
+
+    contents:
+      # Binaries
+      - src: ./configs/config.example.yaml
+        dst: /etc/zapret/config.yaml
+        type: config
+        file_info:
+          mode: 0644
+
+      # Systemd service
+      - src: ./init/systemd/zapret-daemon.service
+        dst: /usr/lib/systemd/system/zapret-daemon.service
+        type: config
+        file_info:
+          mode: 0644
+        packager: deb
+      - src: ./init/systemd/zapret-daemon.service
+        dst: /usr/lib/systemd/system/zapret-daemon.service
+        type: config
+        file_info:
+          mode: 0644
+        packager: rpm
+      - src: ./init/systemd/zapret-daemon.service
+        dst: /usr/lib/systemd/system/zapret-daemon.service
+        type: config
+        file_info:
+          mode: 0644
+        packager: archlinux
+
+      # OpenRC init script (Alpine)
+      - src: ./init/openrc/zapret-daemon
+        dst: /etc/init.d/zapret-daemon
+        type: config
+        file_info:
+          mode: 0755
+        packager: apk
+
+      # SysVinit init script (Debian/Ubuntu compatibility)
+      - src: ./init/sysvinit/zapret-daemon
+        dst: /etc/init.d/zapret-daemon
+        type: config
+        file_info:
+          mode: 0755
+        packager: deb
+
+      # Create runtime directory
+      - dst: /var/run/zapret
+        type: dir
+        file_info:
+          mode: 0755
+
+    scripts:
+      postinstall: scripts/postinstall.sh
+      preremove: scripts/preremove.sh
+
+    overrides:
+      deb:
+        dependencies:
+          - iptables
+        recommends:
+          - systemd
+        file_name_template: >-
+          {{ .PackageName }}_{{ .Version }}_
+          {{- if eq .Arch "amd64" }}amd64
+          {{- else if eq .Arch "386" }}i386
+          {{- else if eq .Arch "arm64" }}arm64
+          {{- else if eq .Arch "arm" }}armhf
+          {{- else }}{{ .Arch }}{{ end }}
+
+      rpm:
+        dependencies:
+          - iptables
+        recommends:
+          - systemd
+        file_name_template: >-
+          {{ .PackageName }}-{{ .Version }}-1.
+          {{- if eq .Arch "amd64" }}x86_64
+          {{- else if eq .Arch "386" }}i386
+          {{- else if eq .Arch "arm64" }}aarch64
+          {{- else if eq .Arch "arm" }}armhfp
+          {{- else }}{{ .Arch }}{{ end }}
+
+      apk:
+        dependencies:
+          - iptables
+          - openrc
+        file_name_template: >-
+          {{ .PackageName }}-{{ .Version }}-r0.
+          {{- if eq .Arch "amd64" }}x86_64
+          {{- else if eq .Arch "386" }}x86
+          {{- else if eq .Arch "arm64" }}aarch64
+          {{- else if eq .Arch "arm" }}armhf
+          {{- else }}{{ .Arch }}{{ end }}
+
+      archlinux:
+        dependencies:
+          - iptables
+          - systemd
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Performance improvements'
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: zapret
+    name: zapret-daemon
+  draft: false
+  prerelease: auto
+  name_template: "Release {{.Version}}"
