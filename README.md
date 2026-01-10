@@ -17,7 +17,30 @@
 
 ## Установка
 
-### Установка зависимостей
+### Установка последней версии
+
+Самый простой способ установить последнюю версию:
+
+```bash
+sudo bash <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-nix/master/install.sh)
+```
+
+Или скачайте и запустите скрипт вручную:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-nix/master/install.sh -o install.sh
+sudo bash install.sh
+```
+
+Скрипт автоматически:
+- Определит вашу систему (дистрибутив и архитектуру)
+- Скачает системный пакет (deb/rpm/apk/pkg.tar.zst)
+- Установит пакет через системный пакетный менеджер
+- Настроит сервис и конфигурацию
+
+### Сборка из исходников
+
+#### Установка зависимостей
 
 ```bash
 # Установить protoc (если еще не установлен)
@@ -33,7 +56,7 @@ rm -rf protoc-28.3-linux-x86_64.zip protoc-install
 make install-tools
 ```
 
-### Сборка
+#### Сборка
 
 ```bash
 # Сгенерировать protobuf код и собрать все бинарники
