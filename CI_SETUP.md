@@ -13,7 +13,7 @@
 ## Структура файлов
 
 ```
-zapret-nix/
+zapret-ng/
 ├── .github/workflows/
 │   └── release.yml              # GitHub Actions workflow
 ├── .goreleaser.yml              # Конфигурация GoReleaser

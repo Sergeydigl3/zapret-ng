@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/twitchtv/twirp"
-	"github.com/Sergeydigl3/zapret-nix/rpc/daemon"
+	"github.com/Sergeydigl3/zapret-ng/rpc/daemon"
 )
 
 // Server implements the ZapretDaemon service.

@@ -71,9 +71,9 @@ archives:
 
 nfpms:
   - id: packages
-    package_name: zapret-nix
+    package_name: zapret-ng
     vendor: Zapret Project
-    homepage: https://github.com/Sergeydigl3/zapret-nix
+    homepage: https://github.com/Sergeydigl3/zapret-ng
     maintainer: Sergeydigl3
     description: |
       Демон-сервис для управления zapret с интерфейсом командной строки.
@@ -224,7 +224,7 @@ changelog:
 release:
   github:
     owner: Sergeydigl3
-    name: zapret-nix
+    name: zapret-ng
   draft: false
   prerelease: auto
   name_template: "Release {{.Version}}"

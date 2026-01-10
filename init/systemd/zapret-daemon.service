@@ -1,6 +1,6 @@
 [Unit]
 Description=Zapret Daemon Service
-Documentation=https://github.com/Sergeydigl3/zapret-nix
+Documentation=https://github.com/Sergeydigl3/zapret-ng
 After=network-online.target
 Wants=network-online.target
 

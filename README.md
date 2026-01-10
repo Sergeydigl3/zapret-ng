@@ -19,21 +19,34 @@
 
 ### Установка последней версии
 
-Самый простой способ установить последнюю версию:
+Самый простой способ установить последнюю версию (работает с `curl` или `wget`):
 
+**С использованием `curl`:**
 ```bash
-sudo bash <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-nix/master/install.sh)
+sudo sh <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh)
+```
+
+**С использованием `wget`:**
+```bash
+sudo sh <(wget -qO - https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh)
 ```
 
 Или скачайте и запустите скрипт вручную:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-nix/master/install.sh -o install.sh
-sudo bash install.sh
+# С curl
+curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh -o install.sh
+
+# Или с wget
+wget https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh
+
+# Запуск (работает в любом sh, включая Alpine Linux)
+sudo sh install.sh
 ```
 
 Скрипт автоматически:
 - Определит вашу систему (дистрибутив и архитектуру)
+- Найдет доступный инструмент для загрузки (curl или wget)
 - Скачает системный пакет (deb/rpm/apk/pkg.tar.zst)
 - Установит пакет через системный пакетный менеджер
 - Настроит сервис и конфигурацию
@@ -139,7 +152,7 @@ ZAPRET_LOG_FORMAT=json
 ## Архитектура
 
 ```
-zapret-nix/
+zapret-ng/
 ├── cmd/
 │   ├── zapret-daemon/     # Демон-сервис
 │   │   ├── main.go

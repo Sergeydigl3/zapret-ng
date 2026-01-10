@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sergeydigl3/zapret-nix/cmd/zapret-daemon/cmd"
+	"github.com/Sergeydigl3/zapret-ng/cmd/zapret-daemon/cmd"
 )
 
 func main() {

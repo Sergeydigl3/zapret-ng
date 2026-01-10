@@ -1,4 +1,4 @@
-module github.com/Sergeydigl3/zapret-nix
+module github.com/Sergeydigl3/zapret-ng
 
 go 1.25.5
 

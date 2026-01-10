@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="Sergeydigl3/zapret-nix"
+REPO="Sergeydigl3/zapret-ng"
 TEMP_DIR=$(mktemp -d)
 
 # Cleanup on exit
@@ -33,9 +33,34 @@ warn() {
 
 # Check if running with sudo
 check_permissions() {
-  if [[ $EUID -ne 0 ]]; then
+  if [ "$(id -u)" -ne 0 ]; then
     error "This script needs to be run with sudo"
     exit 1
+  fi
+}
+
+# Find curl or wget
+find_downloader() {
+  if command -v curl > /dev/null 2>&1; then
+    echo "curl"
+  elif command -v wget > /dev/null 2>&1; then
+    echo "wget"
+  else
+    error "Neither curl nor wget found. Please install one of them."
+    exit 1
+  fi
+}
+
+# Download file using curl or wget
+download_file() {
+  local url=$1
+  local output=$2
+  local downloader=$3
+
+  if [ "$downloader" = "curl" ]; then
+    curl -fL "$url" -o "$output"
+  else
+    wget -q "$url" -O "$output"
   fi
 }
 
@@ -69,15 +94,15 @@ detect_arch() {
 
 # Detect package manager and distro
 detect_package_manager() {
-  if command -v apt-get &> /dev/null; then
+  if command -v apt-get > /dev/null 2>&1; then
     echo "deb"
-  elif command -v dnf &> /dev/null; then
+  elif command -v dnf > /dev/null 2>&1; then
     echo "rpm"
-  elif command -v yum &> /dev/null; then
+  elif command -v yum > /dev/null 2>&1; then
     echo "rpm"
-  elif command -v apk &> /dev/null; then
+  elif command -v apk > /dev/null 2>&1; then
     echo "apk"
-  elif command -v pacman &> /dev/null; then
+  elif command -v pacman > /dev/null 2>&1; then
     echo "archlinux"
   else
     error "Could not detect package manager"
@@ -87,10 +112,16 @@ detect_package_manager() {
 
 # Get latest release version
 get_latest_version() {
-  local version
-  version=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
+  local version downloader
+  downloader=$1
 
-  if [[ -z "$version" ]]; then
+  if [ "$downloader" = "curl" ]; then
+    version=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
+  else
+    version=$(wget -q -O - "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
+  fi
+
+  if [ -z "$version" ]; then
     error "Failed to fetch latest release version"
     exit 1
   fi
@@ -103,24 +134,21 @@ download_package() {
   local version=$1
   local pm=$2
   local arch=$3
-  local filename extension url
+  local downloader=$4
+  local filename url
 
   case "$pm" in
     deb)
-      extension="deb"
-      filename="zapret-nix_${version}_${arch}.deb"
+      filename="zapret-ng_${version}_${arch}.deb"
       ;;
     rpm)
-      extension="rpm"
-      filename="zapret-nix-${version}-1.${arch}.rpm"
+      filename="zapret-ng-${version}-1.${arch}.rpm"
       ;;
     apk)
-      extension="apk"
-      filename="zapret-nix-${version}-r0.${arch}.apk"
+      filename="zapret-ng-${version}-r0.${arch}.apk"
       ;;
     archlinux)
-      extension="pkg.tar.zst"
-      filename="zapret-nix-${version}-1-${arch}.pkg.tar.zst"
+      filename="zapret-ng-${version}-1-${arch}.pkg.tar.zst"
       ;;
     *)
       error "Unsupported package manager: $pm"
@@ -130,9 +158,9 @@ download_package() {
 
   url="https://github.com/$REPO/releases/download/v${version}/$filename"
 
-  info "Downloading zapret-nix v$version ($pm package)..."
+  info "Downloading zapret-ng v$version ($pm package)..."
 
-  if ! curl -fL "$url" -o "$TEMP_DIR/$filename"; then
+  if ! download_file "$url" "$TEMP_DIR/$filename" "$downloader"; then
     error "Failed to download package from $url"
     exit 1
   fi
@@ -153,7 +181,7 @@ install_package() {
       dpkg -i "$package" || apt-get install -f -y
       ;;
     rpm)
-      rpm -ivh "$package" || dnf install -y "$package" || yum install -y "$package"
+      rpm -ivh "$package" 2>/dev/null || dnf install -y "$package" 2>/dev/null || yum install -y "$package"
       ;;
     apk)
       apk add --allow-untrusted "$package"
@@ -168,7 +196,7 @@ install_package() {
 verify_installation() {
   info "Verifying installation..."
 
-  if command -v zapret &> /dev/null; then
+  if command -v zapret > /dev/null 2>&1; then
     local version
     version=$(zapret --version 2>/dev/null || echo "unknown")
     info "Installation successful! Version: $version"
@@ -182,7 +210,7 @@ verify_installation() {
 # Main installation
 main() {
   echo "=========================================="
-  echo "   zapret-nix Installer"
+  echo "   zapret-ng Installer"
   echo "=========================================="
   echo ""
 
@@ -190,22 +218,25 @@ main() {
 
   local arch pm version package
 
+  local downloader
+  downloader=$(find_downloader)
+
   pm=$(detect_package_manager)
   arch=$(detect_arch)
 
   info "Detected system: $pm/$arch"
 
-  version=$(get_latest_version)
+  version=$(get_latest_version "$downloader")
   info "Latest version: v$version"
 
-  package=$(download_package "$version" "$pm" "$arch")
+  package=$(download_package "$version" "$pm" "$arch" "$downloader")
 
   install_package "$package" "$pm"
 
   verify_installation
 
   echo ""
-  info "zapret-nix installed successfully!"
+  info "zapret-ng installed successfully!"
   echo "Run 'zapret --help' to get started"
 }
 
