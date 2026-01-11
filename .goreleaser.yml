@@ -103,7 +103,7 @@ builds:
 
   - id: windows-amd64
     main: ./cmd/zapret-daemon
-    binary: zapret-daemon.exe
+    binary: zapret-daemon
     env:
       - CGO_ENABLED=0
     goos:
