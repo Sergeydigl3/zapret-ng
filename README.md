@@ -15,30 +15,45 @@
 - Go 1.21+
 - protoc (Protocol Buffers compiler)
 
+## Поддерживаемые платформы
+
+### Пакеты (Linux)
+- **Debian/Ubuntu**: amd64, arm64, armhf (ARMv7), i386
+- **RHEL/CentOS/Fedora**: x86_64, aarch64, armhfp (ARMv7), i386
+- **Alpine Linux**: x86_64, aarch64, armhf (ARMv7)
+- **Arch Linux**: x86_64, aarch64, armv7h (ARMv7)
+
+### Архивы (все ОС)
+- **Linux**: amd64, arm64, armv7, i386
+- **macOS**: x86_64, arm64 (Apple Silicon)
+- **Windows**: x86_64, i386
+- **FreeBSD**: x86_64, arm64
+- **Android**: arm64, armv7
+
 ## Установка
 
-### Установка последней версии
+### Установка последней версии (Linux)
 
-Самый простой способ установить последнюю версию (работает с `curl` или `wget`):
+Самый простой способ установить последнюю версию на Linux (работает с `curl` или `wget`):
 
 **С использованием `curl`:**
 ```bash
-sudo sh <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh)
+sudo sh <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh)
 ```
 
 **С использованием `wget`:**
 ```bash
-sudo sh <(wget -qO - https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh)
+sudo sh <(wget -qO - https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh)
 ```
 
 Или скачайте и запустите скрипт вручную:
 
 ```bash
 # С curl
-curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh -o install.sh
 
 # Или с wget
-wget https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/master/install.sh
+wget https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh
 
 # Запуск (работает в любом sh, включая Alpine Linux)
 sudo sh install.sh
@@ -50,6 +65,10 @@ sudo sh install.sh
 - Скачает системный пакет (deb/rpm/apk/pkg.tar.zst)
 - Установит пакет через системный пакетный менеджер
 - Настроит сервис и конфигурацию
+
+### Установка на других платформах
+
+Для macOS, Windows, FreeBSD и Android скачайте архив напрямую с [GitHub Releases](https://github.com/Sergeydigl3/zapret-ng/releases).
 
 ### Сборка из исходников
 

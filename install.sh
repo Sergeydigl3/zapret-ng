@@ -71,16 +71,19 @@ detect_arch() {
 
   case "$machine" in
     x86_64)
-      echo "amd64"
+      echo "x86_64"
       ;;
-    aarch64|arm64)
-      echo "arm64"
+    aarch64)
+      echo "aarch64"
+      ;;
+    arm64)
+      echo "aarch64"
       ;;
     armv7l)
-      echo "armhf"
+      echo "armv7"
       ;;
     armv6l)
-      echo "armhf"
+      echo "armv6"
       ;;
     i386|i686)
       echo "i386"
@@ -90,6 +93,14 @@ detect_arch() {
       exit 1
       ;;
   esac
+}
+
+# Check if system is Linux
+check_linux() {
+  if [ "$(uname -s)" != "Linux" ]; then
+    error "This script only supports Linux. For other platforms, download the binary from GitHub releases."
+    exit 1
+  fi
 }
 
 # Detect package manager and distro
@@ -214,6 +225,7 @@ main() {
   echo "=========================================="
   echo ""
 
+  check_linux
   check_permissions
 
   local arch pm version package
