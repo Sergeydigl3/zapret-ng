@@ -1,4 +1,4 @@
-module github.com/Sergeydigl3/zapret-ng
+module github.com/Sergeydigl3/zapret-discord-youtube-ng
 
 go 1.25.5
 

@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="Sergeydigl3/zapret-ng"
+REPO="Sergeydigl3/zapret-discord-youtube-ng"
 TEMP_DIR=$(mktemp -d)
 
 # Cleanup on exit
@@ -151,16 +151,16 @@ download_package() {
 
   case "$pm" in
     deb)
-      filename="zapret-ng_${version}_${arch}.deb"
+      filename="zapret-discord-youtube-ng_${version}_${arch}.deb"
       ;;
     rpm)
-      filename="zapret-ng-${version}-1.${arch}.rpm"
+      filename="zapret-discord-youtube-ng-${version}-1.${arch}.rpm"
       ;;
     apk)
-      filename="zapret-ng-${version}-r0.${arch}.apk"
+      filename="zapret-discord-youtube-ng-${version}-r0.${arch}.apk"
       ;;
     archlinux)
-      filename="zapret-ng-${version}-1-${arch}.pkg.tar.zst"
+      filename="zapret-discord-youtube-ng-${version}-1-${arch}.pkg.tar.zst"
       ;;
     *)
       error "Unsupported package manager: $pm"
@@ -170,7 +170,7 @@ download_package() {
 
   url="https://github.com/$REPO/releases/download/v${version}/$filename"
 
-  info "Downloading zapret-ng v$version ($pm package)..." >&2
+  info "Downloading zapret-discord-youtube-ng v$version ($pm package)..." >&2
   info "URL: $url" >&2
   info "Saving to: $TEMP_DIR/$filename" >&2
 
@@ -234,7 +234,7 @@ verify_installation() {
 # Main installation
 main() {
   echo "=========================================="
-  echo "   zapret-ng Installer"
+  echo "   zapret-discord-youtube-ng Installer"
   echo "=========================================="
   echo ""
 
@@ -261,7 +261,7 @@ main() {
   verify_installation
 
   echo ""
-  info "zapret-ng installed successfully!"
+  info "zapret-discord-youtube-ng installed successfully!"
   echo "Run 'zapret --help' to get started"
 }
 

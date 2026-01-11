@@ -38,22 +38,22 @@
 
 **С использованием `curl`:**
 ```bash
-sudo sh <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh)
+sudo sh <(curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-discord-youtube-ng/refs/heads/master/install.sh)
 ```
 
 **С использованием `wget`:**
 ```bash
-sudo sh <(wget -qO - https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh)
+sudo sh <(wget -qO - https://raw.githubusercontent.com/Sergeydigl3/zapret-discord-youtube-ng/refs/heads/master/install.sh)
 ```
 
 Или скачайте и запустите скрипт вручную:
 
 ```bash
 # С curl
-curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/Sergeydigl3/zapret-discord-youtube-ng/refs/heads/master/install.sh -o install.sh
 
 # Или с wget
-wget https://raw.githubusercontent.com/Sergeydigl3/zapret-ng/refs/heads/master/install.sh
+wget https://raw.githubusercontent.com/Sergeydigl3/zapret-discord-youtube-ng/refs/heads/master/install.sh
 
 # Запуск (работает в любом sh, включая Alpine Linux)
 sudo sh install.sh
@@ -68,7 +68,7 @@ sudo sh install.sh
 
 ### Установка на других платформах
 
-Для macOS, Windows, FreeBSD и Android скачайте архив напрямую с [GitHub Releases](https://github.com/Sergeydigl3/zapret-ng/releases).
+Для macOS, Windows, FreeBSD и Android скачайте архив напрямую с [GitHub Releases](https://github.com/Sergeydigl3/zapret-discord-youtube-ng/releases).
 
 ### Сборка из исходников
 
@@ -171,7 +171,7 @@ ZAPRET_LOG_FORMAT=json
 ## Архитектура
 
 ```
-zapret-ng/
+zapret-discord-youtube-ng/
 ├── cmd/
 │   ├── zapret-daemon/     # Демон-сервис
 │   │   ├── main.go

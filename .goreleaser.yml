@@ -218,9 +218,9 @@ archives:
 
 nfpms:
   - id: packages
-    package_name: zapret-ng
+    package_name: zapret-discord-youtube-ng
     vendor: Zapret Project
-    homepage: https://github.com/Sergeydigl3/zapret-ng
+    homepage: https://github.com/Sergeydigl3/zapret-discord-youtube-ng
     maintainer: Sergeydigl3
     description: |
       Демон-сервис для управления zapret с интерфейсом командной строки.
@@ -371,7 +371,7 @@ changelog:
 release:
   github:
     owner: Sergeydigl3
-    name: zapret-ng
+    name: zapret-discord-youtube-ng
   draft: false
   prerelease: auto
   name_template: "Release {{.Version}}"

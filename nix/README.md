@@ -1,15 +1,15 @@
-# Nix support for zapret-ng
+# Nix support for zapret-discord-youtube-ng
 
 ## Installation
 
 ### From flake (recommended)
 ```bash
-nix flake install github:Sergeydigl3/zapret-ng
+nix flake install github:Sergeydigl3/zapret-discord-youtube-ng
 ```
 
 ### From local clone
 ```bash
-git clone https://github.com/Sergeydigl3/zapret-ng
+git clone https://github.com/Sergeydigl3/zapret-discord-youtube-ng
 cd zapret-nix
 nix flake install
 ```
@@ -20,16 +20,16 @@ Add to your `configuration.nix`:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    zapret-ng.url = "github:Sergeydigl3/zapret-ng";
+    zapret-discord-youtube-ng.url = "github:Sergeydigl3/zapret-discord-youtube-ng";
   };
 
-  outputs = { self, nixpkgs, zapret-ng }: {
+  outputs = { self, nixpkgs, zapret-discord-youtube-ng }: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
         {
-          nixpkgs.overlays = [ zapret-ng.overlays.default ];
-          environment.systemPackages = with pkgs; [ zapret-ng ];
+          nixpkgs.overlays = [ zapret-discord-youtube-ng.overlays.default ];
+          environment.systemPackages = with pkgs; [ zapret-discord-youtube-ng ];
         }
       ];
     };

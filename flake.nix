@@ -1,5 +1,5 @@
 {
-  description = "zapret-ng - network censorship circumvention tool";
+  description = "zapret-discord-youtube-ng - network censorship circumvention tool";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -13,7 +13,7 @@
       in
       {
         packages.default = pkgs.buildGoModule {
-          pname = "zapret-ng";
+          pname = "zapret-discord-youtube-ng";
           version = "0.1.0";
           src = ./.;
 
@@ -43,7 +43,7 @@
 
           meta = {
             description = "Network censorship circumvention tool";
-            homepage = "https://github.com/Sergeydigl3/zapret-ng";
+            homepage = "https://github.com/Sergeydigl3/zapret-discord-youtube-ng";
             license = pkgs.lib.licenses.mit;
             platforms = pkgs.lib.platforms.linux;
             maintainers = [ ];
@@ -59,7 +59,7 @@
           ];
 
           shellHook = ''
-            echo "zapret-ng development environment loaded"
+            echo "zapret-discord-youtube-ng development environment loaded"
             echo "Go version: $(go version)"
             echo "Protoc version: $(protoc --version)"
             echo "Run 'make build' to build the project"

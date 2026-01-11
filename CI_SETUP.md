@@ -13,7 +13,7 @@
 ## Структура файлов
 
 ```
-zapret-ng/
+zapret-discord-youtube-ng/
 ├── .github/workflows/
 │   └── release.yml              # GitHub Actions workflow
 ├── .goreleaser.yml              # Конфигурация GoReleaser
