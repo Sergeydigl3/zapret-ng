@@ -177,50 +177,65 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-  - id: android-arm64
-    main: ./cmd/zapret-daemon
-    binary: zapret-daemon
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - android
-    goarch:
-      - arm64
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
+  # - id: android-arm64
+  #   main: ./cmd/zapret-daemon
+  #   binary: zapret-daemon
+  #   env:
+  #     - CGO_ENABLED=0
+  #   goos:
+  #     - android
+  #   goarch:
+  #     - arm64
+  #   ldflags:
+  #     - -s -w
+  #     - -X main.version={{.Version}}
+  #     - -X main.commit={{.Commit}}
+  #     - -X main.date={{.Date}}
 
-  - id: android-arm
-    main: ./cmd/zapret-daemon
-    binary: zapret-daemon
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - android
-    goarch:
-      - arm
-    goarm:
-      - "7"
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
+  # - id: android-arm
+  #   main: ./cmd/zapret-daemon
+  #   binary: zapret-daemon
+  #   env:
+  #     - CGO_ENABLED=0
+  #   goos:
+  #     - android
+  #   goarch:
+  #     - arm
+  #   goarm:
+  #     - "7"
+  #   ldflags:
+  #     - -s -w
+  #     - -X main.version={{.Version}}
+  #     - -X main.commit={{.Commit}}
+  #     - -X main.date={{.Date}}
 
 archives:
   - id: default
-    format: tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
       {{- .Arch }}
       {{- if .Arm }}_v{{ .Arm }}{{ end }}
+    formats:
+      - tar.gz
+      - zip
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
+      - goos: linux
+        formats:
+          - tar.gz
+      - goos: darwin
+        formats:
+          - tar.gz
+      - goos: freebsd
+        formats:
+          - tar.gz
+      - goos: android
+        formats:
+          - tar.gz
     files:
       - README.md
       - LICENSE*
@@ -239,12 +254,6 @@ nfpms:
       Демон-сервис для управления zapret с интерфейсом командной строки.
       Использует Twirp RPC для коммуникации между клиентом и демоном.
     license: MIT
-    builds:
-      - linux-amd64
-      - linux-arm64
-      - linux-armv7
-      - linux-armv6
-      - linux-386
 
     formats:
       - deb
