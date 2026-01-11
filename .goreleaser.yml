@@ -8,7 +8,7 @@ before:
     - make proto
 
 builds:
-  - id: zapret-daemon
+  - id: linux-amd64
     main: ./cmd/zapret-daemon
     binary: zapret-daemon
     env:
@@ -17,11 +17,37 @@ builds:
       - linux
     goarch:
       - amd64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: linux-arm64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
       - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: linux-armv7
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
       - arm
-      - 386
     goarm:
-      - "6"
       - "7"
     ldflags:
       - -s -w
@@ -29,20 +55,153 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-  - id: zapret-cli
-    main: ./cmd/zapret
-    binary: zapret
+  - id: linux-armv6
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
     env:
       - CGO_ENABLED=0
     goos:
       - linux
     goarch:
-      - amd64
-      - arm64
       - arm
-      - 386
     goarm:
       - "6"
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: linux-386
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - 386
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: macos-amd64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: macos-arm64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: windows-amd64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon.exe
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: windows-386
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon.exe
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - 386
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: freebsd-amd64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: freebsd-arm64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+    goarch:
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: android-arm64
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - android
+    goarch:
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  - id: android-arm
+    main: ./cmd/zapret-daemon
+    binary: zapret-daemon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - android
+    goarch:
+      - arm
+    goarm:
       - "7"
     ldflags:
       - -s -w
@@ -57,10 +216,11 @@ archives:
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+      {{- .Arch }}
+      {{- if .Arm }}_v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - README.md
       - LICENSE*
@@ -79,6 +239,12 @@ nfpms:
       Демон-сервис для управления zapret с интерфейсом командной строки.
       Использует Twirp RPC для коммуникации между клиентом и демоном.
     license: MIT
+    builds:
+      - linux-amd64
+      - linux-arm64
+      - linux-armv7
+      - linux-armv6
+      - linux-386
 
     formats:
       - deb
