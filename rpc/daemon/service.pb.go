@@ -123,6 +123,125 @@ func (x *RestartResponse) GetRestartedAt() string {
 	return ""
 }
 
+// StatusRequest is the request message for getting daemon status.
+type StatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusRequest) Reset() {
+	*x = StatusRequest{}
+	mi := &file_rpc_daemon_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusRequest) ProtoMessage() {}
+
+func (x *StatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_daemon_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.
+func (*StatusRequest) Descriptor() ([]byte, []int) {
+	return file_rpc_daemon_service_proto_rawDescGZIP(), []int{2}
+}
+
+// StatusResponse is the response message with daemon status.
+type StatusResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// running indicates if the strategy runner is currently running.
+	Running bool `protobuf:"varint,1,opt,name=running,proto3" json:"running,omitempty"`
+	// strategy_file is the path to the currently active strategy file.
+	StrategyFile string `protobuf:"bytes,2,opt,name=strategy_file,json=strategyFile,proto3" json:"strategy_file,omitempty"`
+	// active_queues is the number of active NFQUEUE rules.
+	ActiveQueues int32 `protobuf:"varint,3,opt,name=active_queues,json=activeQueues,proto3" json:"active_queues,omitempty"`
+	// active_processes is the number of running nfqws processes.
+	ActiveProcesses int32 `protobuf:"varint,4,opt,name=active_processes,json=activeProcesses,proto3" json:"active_processes,omitempty"`
+	// firewall_backend is the firewall backend being used (nftables or iptables).
+	FirewallBackend string `protobuf:"bytes,5,opt,name=firewall_backend,json=firewallBackend,proto3" json:"firewall_backend,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *StatusResponse) Reset() {
+	*x = StatusResponse{}
+	mi := &file_rpc_daemon_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusResponse) ProtoMessage() {}
+
+func (x *StatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_daemon_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.
+func (*StatusResponse) Descriptor() ([]byte, []int) {
+	return file_rpc_daemon_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *StatusResponse) GetRunning() bool {
+	if x != nil {
+		return x.Running
+	}
+	return false
+}
+
+func (x *StatusResponse) GetStrategyFile() string {
+	if x != nil {
+		return x.StrategyFile
+	}
+	return ""
+}
+
+func (x *StatusResponse) GetActiveQueues() int32 {
+	if x != nil {
+		return x.ActiveQueues
+	}
+	return 0
+}
+
+func (x *StatusResponse) GetActiveProcesses() int32 {
+	if x != nil {
+		return x.ActiveProcesses
+	}
+	return 0
+}
+
+func (x *StatusResponse) GetFirewallBackend() string {
+	if x != nil {
+		return x.FirewallBackend
+	}
+	return ""
+}
+
 var File_rpc_daemon_service_proto protoreflect.FileDescriptor
 
 const file_rpc_daemon_service_proto_rawDesc = "" +
@@ -132,9 +251,17 @@ const file_rpc_daemon_service_proto_rawDesc = "" +
 	"\x05force\x18\x01 \x01(\bR\x05force\"N\n" +
 	"\x0fRestartResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12!\n" +
-	"\frestarted_at\x18\x02 \x01(\tR\vrestartedAt2J\n" +
+	"\frestarted_at\x18\x02 \x01(\tR\vrestartedAt\"\x0f\n" +
+	"\rStatusRequest\"\xca\x01\n" +
+	"\x0eStatusResponse\x12\x18\n" +
+	"\arunning\x18\x01 \x01(\bR\arunning\x12#\n" +
+	"\rstrategy_file\x18\x02 \x01(\tR\fstrategyFile\x12#\n" +
+	"\ractive_queues\x18\x03 \x01(\x05R\factiveQueues\x12)\n" +
+	"\x10active_processes\x18\x04 \x01(\x05R\x0factiveProcesses\x12)\n" +
+	"\x10firewall_backend\x18\x05 \x01(\tR\x0ffirewallBackend2\x86\x01\n" +
 	"\fZapretDaemon\x12:\n" +
-	"\aRestart\x12\x16.daemon.RestartRequest\x1a\x17.daemon.RestartResponseB=Z;github.com/Sergeydigl3/zapret-discord-youtube-ng/rpc/daemonb\x06proto3"
+	"\aRestart\x12\x16.daemon.RestartRequest\x1a\x17.daemon.RestartResponse\x12:\n" +
+	"\tGetStatus\x12\x15.daemon.StatusRequest\x1a\x16.daemon.StatusResponseB=Z;github.com/Sergeydigl3/zapret-discord-youtube-ng/rpc/daemonb\x06proto3"
 
 var (
 	file_rpc_daemon_service_proto_rawDescOnce sync.Once
@@ -148,16 +275,20 @@ func file_rpc_daemon_service_proto_rawDescGZIP() []byte {
 	return file_rpc_daemon_service_proto_rawDescData
 }
 
-var file_rpc_daemon_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_rpc_daemon_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_rpc_daemon_service_proto_goTypes = []any{
 	(*RestartRequest)(nil),  // 0: daemon.RestartRequest
 	(*RestartResponse)(nil), // 1: daemon.RestartResponse
+	(*StatusRequest)(nil),   // 2: daemon.StatusRequest
+	(*StatusResponse)(nil),  // 3: daemon.StatusResponse
 }
 var file_rpc_daemon_service_proto_depIdxs = []int32{
 	0, // 0: daemon.ZapretDaemon.Restart:input_type -> daemon.RestartRequest
-	1, // 1: daemon.ZapretDaemon.Restart:output_type -> daemon.RestartResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: daemon.ZapretDaemon.GetStatus:input_type -> daemon.StatusRequest
+	1, // 2: daemon.ZapretDaemon.Restart:output_type -> daemon.RestartResponse
+	3, // 3: daemon.ZapretDaemon.GetStatus:output_type -> daemon.StatusResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -174,7 +305,7 @@ func file_rpc_daemon_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_daemon_service_proto_rawDesc), len(file_rpc_daemon_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

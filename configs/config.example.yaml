@@ -23,3 +23,17 @@ logging:
 
   # Log format: json, text
   format: "text"
+
+# Strategy Runner configuration (optional)
+strategy_runner:
+  # Enable strategy runner
+  enabled: false
+
+  # Path to strategy configuration file
+  config_path: "/etc/zapret/strategy.yaml"
+
+  # Watch config file for changes and restart on update
+  watch: true
+
+  # Path to nfqws binary
+  nfqws_binary: "/usr/bin/nfqws"

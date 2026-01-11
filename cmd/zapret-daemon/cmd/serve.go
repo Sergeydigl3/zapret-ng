@@ -45,8 +45,11 @@ func runServe(cmd *cobra.Command, args []string) error {
 		slog.String("network_address", cfg.Server.NetworkAddress),
 	)
 
-	// Create Twirp server
-	twirpServer := daemonserver.NewTwirpServer(logger)
+	// Create Twirp server with config
+	twirpServer, err := daemonserver.NewTwirpServer(logger, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create twirp server: %w", err)
+	}
 
 	// Create HTTP server
 	httpServer := &http.Server{

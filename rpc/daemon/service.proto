@@ -9,6 +9,9 @@ service ZapretDaemon {
   // Restart restarts the zapret daemon service.
   // Returns empty response on success, or error if restart failed.
   rpc Restart(RestartRequest) returns (RestartResponse);
+
+  // GetStatus returns the current status of the strategy runner.
+  rpc GetStatus(StatusRequest) returns (StatusResponse);
 }
 
 // RestartRequest is the request message for restarting the daemon.
@@ -25,4 +28,25 @@ message RestartResponse {
 
   // restarted_at contains the timestamp when the daemon was restarted (RFC3339 format).
   string restarted_at = 2;
+}
+
+// StatusRequest is the request message for getting daemon status.
+message StatusRequest {}
+
+// StatusResponse is the response message with daemon status.
+message StatusResponse {
+  // running indicates if the strategy runner is currently running.
+  bool running = 1;
+
+  // strategy_file is the path to the currently active strategy file.
+  string strategy_file = 2;
+
+  // active_queues is the number of active NFQUEUE rules.
+  int32 active_queues = 3;
+
+  // active_processes is the number of running nfqws processes.
+  int32 active_processes = 4;
+
+  // firewall_backend is the firewall backend being used (nftables or iptables).
+  string firewall_backend = 5;
 }

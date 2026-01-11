@@ -8,22 +8,36 @@ import (
 	"time"
 
 	"github.com/twitchtv/twirp"
+	"github.com/Sergeydigl3/zapret-discord-youtube-ng/internal/config"
+	"github.com/Sergeydigl3/zapret-discord-youtube-ng/internal/strategyrunner"
 	"github.com/Sergeydigl3/zapret-discord-youtube-ng/rpc/daemon"
 )
 
 // Server implements the ZapretDaemon service.
 type Server struct {
-	logger       *slog.Logger
-	startTime    time.Time
-	restartCount int
+	logger         *slog.Logger
+	startTime      time.Time
+	restartCount   int
+	strategyRunner *strategyrunner.Runner
 }
 
 // NewServer creates a new daemon server instance.
-func NewServer(logger *slog.Logger) *Server {
-	return &Server{
-		logger:    logger,
-		startTime: time.Now(),
+func NewServer(logger *slog.Logger, cfg *config.Config) (*Server, error) {
+	var runner *strategyrunner.Runner
+	var err error
+
+	if cfg.StrategyRunner.Enabled {
+		runner, err = strategyrunner.NewRunner(&cfg.StrategyRunner, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create strategy runner: %w", err)
+		}
 	}
+
+	return &Server{
+		logger:         logger,
+		startTime:      time.Now(),
+		strategyRunner: runner,
+	}, nil
 }
 
 // Restart implements the Restart RPC method.
@@ -38,29 +52,46 @@ func (s *Server) Restart(ctx context.Context, req *daemon.RestartRequest) (*daem
 		return nil, twirp.RequiredArgumentError("request")
 	}
 
-	// Check if daemon is busy (this is a placeholder - implement actual logic)
-	isBusy := false // TODO: implement actual busy check
-	if isBusy && !req.Force {
-		s.logger.Warn("restart rejected: daemon is busy")
-		return nil, twirp.NewError(twirp.FailedPrecondition, "daemon is busy, use force=true to override")
+	// If strategy runner is enabled, restart it
+	if s.strategyRunner != nil {
+		if err := s.strategyRunner.Restart(ctx); err != nil {
+			s.logger.Error("failed to restart strategy runner", slog.Any("error", err))
+			return nil, twirp.InternalErrorWith(err)
+		}
 	}
 
-	// Perform restart logic
+	// Perform restart tracking
 	restartedAt := time.Now()
 	s.restartCount++
 	s.startTime = restartedAt
 
-	s.logger.Info("daemon restarted successfully",
+	s.logger.Info("strategy runner restarted successfully",
 		slog.Time("restarted_at", restartedAt),
 		slog.Int("total_restarts", s.restartCount),
 	)
 
-	// In a real implementation, you would trigger actual restart logic here
-	// For example: reload configuration, restart workers, etc.
-
 	return &daemon.RestartResponse{
-		Message:     fmt.Sprintf("daemon restarted successfully (restart #%d)", s.restartCount),
+		Message:     fmt.Sprintf("strategy runner restarted successfully (restart #%d)", s.restartCount),
 		RestartedAt: restartedAt.Format(time.RFC3339),
+	}, nil
+}
+
+// GetStatus implements the GetStatus RPC method.
+func (s *Server) GetStatus(ctx context.Context, req *daemon.StatusRequest) (*daemon.StatusResponse, error) {
+	if s.strategyRunner == nil {
+		return &daemon.StatusResponse{
+			Running: false,
+		}, nil
+	}
+
+	status := s.strategyRunner.GetStatus()
+
+	return &daemon.StatusResponse{
+		Running:         status.Running,
+		StrategyFile:    status.StrategyFile,
+		ActiveQueues:    int32(status.ActiveQueues),
+		ActiveProcesses: int32(status.ActiveProcesses),
+		FirewallBackend: status.FirewallBackend,
 	}, nil
 }
 
@@ -75,8 +106,19 @@ func (s *Server) GetRestartCount() int {
 }
 
 // NewTwirpServer creates a new Twirp HTTP handler for the daemon service.
-func NewTwirpServer(logger *slog.Logger) daemon.TwirpServer {
-	server := NewServer(logger)
+func NewTwirpServer(logger *slog.Logger, cfg *config.Config) (daemon.TwirpServer, error) {
+	server, err := NewServer(logger, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start strategy runner if enabled
+	if server.strategyRunner != nil {
+		if err := server.strategyRunner.Start(context.Background()); err != nil {
+			logger.Error("failed to start strategy runner", slog.Any("error", err))
+			return nil, err
+		}
+	}
 
 	// Create Twirp server with hooks for logging
 	hooks := &twirp.ServerHooks{
@@ -104,7 +146,7 @@ func NewTwirpServer(logger *slog.Logger) daemon.TwirpServer {
 		},
 	}
 
-	return daemon.NewZapretDaemonServer(server, twirp.WithServerHooks(hooks))
+	return daemon.NewZapretDaemonServer(server, twirp.WithServerHooks(hooks)), nil
 }
 
 // InitLogger initializes a structured logger with the specified level and format.

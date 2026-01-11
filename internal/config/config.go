@@ -9,8 +9,9 @@ import (
 
 // Config represents the application configuration.
 type Config struct {
-	Server  ServerConfig  `yaml:"server"`
-	Logging LoggingConfig `yaml:"logging"`
+	Server         ServerConfig         `yaml:"server"`
+	Logging        LoggingConfig        `yaml:"logging"`
+	StrategyRunner StrategyRunnerConfig `yaml:"strategy_runner"`
 }
 
 // ServerConfig contains server-related configuration.
@@ -34,6 +35,21 @@ type LoggingConfig struct {
 
 	// Format is the log format (json, text).
 	Format string `yaml:"format" env:"ZAPRET_LOG_FORMAT" env-default:"text"`
+}
+
+// StrategyRunnerConfig contains strategy runner configuration.
+type StrategyRunnerConfig struct {
+	// Enabled indicates if strategy runner is enabled.
+	Enabled bool `yaml:"enabled" env:"ZAPRET_SR_ENABLED" env-default:"false"`
+
+	// ConfigPath is the path to strategy configuration file.
+	ConfigPath string `yaml:"config_path" env:"ZAPRET_SR_CONFIG_PATH" env-default:"/etc/zapret/strategy.yaml"`
+
+	// Watch indicates if config file should be watched for changes.
+	Watch bool `yaml:"watch" env:"ZAPRET_SR_WATCH" env-default:"true"`
+
+	// NFQWSBinary is the path to nfqws binary.
+	NFQWSBinary string `yaml:"nfqws_binary" env:"ZAPRET_SR_NFQWS_BINARY" env-default:"/usr/bin/nfqws"`
 }
 
 // Load loads configuration from file and environment variables.
