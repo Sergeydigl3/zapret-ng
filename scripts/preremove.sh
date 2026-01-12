@@ -75,7 +75,7 @@ if [ -L /usr/local/bin/zapret ]; then
 fi
 
 # Clean up PID file
-rm -f /var/run/zapret-daemon.pid || true
+rm -f /run/zapret-daemon.pid || true
 
 echo "Pre-removal cleanup complete."
 

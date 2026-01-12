@@ -117,7 +117,7 @@ cp configs/config.example.yaml /etc/zapret/config.yaml
 ```yaml
 server:
   # Unix socket (по умолчанию)
-  socket_path: "/var/run/zapret-daemon.sock"
+  socket_path: "/run/zapret/zapret-daemon.sock"
 
   # Сетевой адрес (опционально)
   # network_address: "localhost:8080"
@@ -162,7 +162,7 @@ ZAPRET_LOG_FORMAT=json
 ./out/bin/zapret restart --force
 
 # С указанием конкретного сокета
-./out/bin/zapret restart --socket /var/run/zapret-daemon.sock
+./out/bin/zapret restart --socket /run/zapret/zapret-daemon.sock
 
 # С указанием сетевого адреса
 ./out/bin/zapret restart --address localhost:8080

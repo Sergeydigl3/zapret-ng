@@ -15,10 +15,10 @@ detect_init_system() {
 }
 
 # Create runtime directory if it doesn't exist
-mkdir -p /var/run/zapret
+mkdir -p /run/zapret
 
 # Set proper permissions
-chmod 755 /var/run/zapret
+chmod 755 /run/zapret
 
 # Detect and configure init system
 INIT_SYSTEM=$(detect_init_system)

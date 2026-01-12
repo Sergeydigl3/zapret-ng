@@ -18,7 +18,7 @@ type Config struct {
 type ServerConfig struct {
 	// SocketPath is the path to Unix domain socket.
 	// If empty, Unix socket will not be created.
-	SocketPath string `yaml:"socket_path" env:"ZAPRET_SOCKET_PATH" env-default:"/var/run/zapret-daemon.sock"`
+	SocketPath string `yaml:"socket_path" env:"ZAPRET_SOCKET_PATH" env-default:"/run/zapret/zapret-daemon.sock"`
 
 	// NetworkAddress is the network address to listen on (host:port or :port).
 	// If empty, network listener will not be created.

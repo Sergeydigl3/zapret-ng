@@ -286,7 +286,7 @@ nfpms:
         packager: deb
 
       # Create runtime directory
-      - dst: /var/run/zapret
+      - dst: /run/zapret
         type: dir
         file_info:
           mode: 0755

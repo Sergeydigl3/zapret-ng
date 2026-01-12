@@ -5,7 +5,7 @@
 server:
   # Socket path for Unix domain socket (default)
   # Leave empty to disable Unix socket
-  socket_path: "/var/run/zapret-daemon.sock"
+  socket_path: "/run/zapret/zapret-daemon.sock"
 
   # Network address for TCP socket (optional)
   # Format: "host:port" or ":port"

@@ -14,7 +14,7 @@ DESC="Zapret Daemon Service"
 NAME=zapret-daemon
 DAEMON=/usr/bin/$NAME
 DAEMON_ARGS="serve --config /etc/zapret/config.yaml"
-PIDFILE=/var/run/$NAME.pid
+PIDFILE=/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
@@ -32,7 +32,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 do_start()
 {
     # Create runtime directory
-    mkdir -p /var/run/zapret
+    mkdir -p /run/zapret
 
     # Return
     #   0 if daemon has been started
