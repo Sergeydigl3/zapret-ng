@@ -43,7 +43,7 @@ type StrategyRunnerConfig struct {
 	Enabled bool `yaml:"enabled" env:"ZAPRET_SR_ENABLED" env-default:"false"`
 
 	// ConfigPath is the path to strategy configuration file.
-	ConfigPath string `yaml:"config_path" env:"ZAPRET_SR_CONFIG_PATH" env-default:"/etc/zapret/strategy.yaml"`
+	ConfigPath string `yaml:"config_path" env:"ZAPRET_SR_CONFIG_PATH" env-default:"/etc/zapret-ng/strategy.yaml"`
 
 	// Watch indicates if config file should be watched for changes.
 	Watch bool `yaml:"watch" env:"ZAPRET_SR_WATCH" env-default:"true"`
@@ -59,12 +59,14 @@ func Load(configPath string) (*Config, error) {
 
 	// Check if config file exists
 	if configPath != "" {
-		if _, err := os.Stat(configPath); err == nil {
-			if err := cleanenv.ReadConfig(configPath, cfg); err != nil {
-				return nil, fmt.Errorf("failed to read config file: %w", err)
+		if _, err := os.Stat(configPath); err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("config file not found: %s", configPath)
 			}
-		} else if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("failed to access config file: %w", err)
+		}
+		if err := cleanenv.ReadConfig(configPath, cfg); err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
 		}
 	}
 

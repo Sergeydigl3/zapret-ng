@@ -22,13 +22,13 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file path (default: /etc/zapret/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file path (default: /etc/zapret-ng/config.yaml)")
 }
 
 // GetConfigPath returns the config file path.
 func GetConfigPath() string {
 	if cfgFile == "" {
-		return "/etc/zapret/config.yaml"
+		return "/etc/zapret-ng/config.yaml"
 	}
 	return cfgFile
 }

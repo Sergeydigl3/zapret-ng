@@ -30,7 +30,7 @@ strategy_runner:
   enabled: false
 
   # Path to strategy configuration file
-  config_path: "/etc/zapret/strategy.yaml"
+  config_path: "/etc/zapret-ng/strategy.yaml"
 
   # Watch config file for changes and restart on update
   watch: true

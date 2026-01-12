@@ -6,7 +6,7 @@ name="zapret-daemon"
 description="Zapret Daemon Service"
 
 command="/usr/bin/zapret-daemon"
-command_args="serve --config /etc/zapret/config.yaml"
+command_args="serve --config /etc/zapret-ng/config.yaml"
 command_background="yes"
 pidfile="/run/${RC_SVCNAME}.pid"
 

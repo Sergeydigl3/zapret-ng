@@ -66,7 +66,7 @@ func NewRunner(mainCfg *config.StrategyRunnerConfig, logger *slog.Logger) (*Runn
 	// Create parser
 	parser := NewParser(
 		"/usr/bin",
-		"/etc/zapret/lists",
+		"/etc/zapret-ng/lists",
 		cfg.GameFilterPorts,
 		cfg.GameFilter,
 		logger,

@@ -72,7 +72,7 @@ wget https://github.com/Sergeydigl3/zapret-discord-youtube-ng/releases/download/
 sudo dpkg -i zapret-daemon_1.0.0_amd64.deb
 
 # Настроить конфигурацию
-sudo nano /etc/zapret/config.yaml
+sudo nano /etc/zapret-ng/config.yaml
 
 # Запустить сервис (systemd)
 sudo systemctl start zapret-daemon
@@ -96,7 +96,7 @@ sudo rpm -ivh zapret-daemon-1.0.0-1.x86_64.rpm
 sudo yum install zapret-daemon-1.0.0-1.x86_64.rpm
 
 # Настроить и запустить
-sudo nano /etc/zapret/config.yaml
+sudo nano /etc/zapret-ng/config.yaml
 sudo systemctl start zapret-daemon
 sudo systemctl enable zapret-daemon
 ```
@@ -111,7 +111,7 @@ wget https://github.com/Sergeydigl3/zapret-discord-youtube-ng/releases/download/
 sudo apk add --allow-untrusted zapret-daemon-1.0.0-r0.x86_64.apk
 
 # Настроить и запустить (OpenRC)
-sudo nano /etc/zapret/config.yaml
+sudo nano /etc/zapret-ng/config.yaml
 sudo rc-service zapret-daemon start
 sudo rc-update add zapret-daemon default
 ```
@@ -126,7 +126,7 @@ wget https://github.com/Sergeydigl3/zapret-discord-youtube-ng/releases/download/
 sudo pacman -U zapret-daemon-1.0.0-1-x86_64.pkg.tar.zst
 
 # Настроить и запустить
-sudo nano /etc/zapret/config.yaml
+sudo nano /etc/zapret-ng/config.yaml
 sudo systemctl start zapret-daemon
 sudo systemctl enable zapret-daemon
 ```
@@ -145,8 +145,8 @@ sudo cp zapret-daemon /usr/local/bin/
 sudo cp zapret /usr/local/bin/
 
 # Создать конфигурацию
-sudo mkdir -p /etc/zapret
-sudo cp configs/config.example.yaml /etc/zapret/config.yaml
+sudo mkdir -p /etc/zapret-ng
+sudo cp configs/config.example.yaml /etc/zapret-ng/config.yaml
 
 # Установить init скрипт вручную
 # Для systemd:
@@ -256,7 +256,7 @@ sudo pacman -R zapret-daemon
 ```
 /usr/bin/zapret-daemon          # Демон
 /usr/bin/zapret                 # CLI клиент
-/etc/zapret/config.yaml         # Конфигурация
+/etc/zapret-ng/config.yaml         # Конфигурация
 /var/run/zapret/                # Runtime директория
 /usr/lib/systemd/system/zapret-daemon.service  # Systemd unit (если systemd)
 /etc/init.d/zapret-daemon       # Init скрипт (если OpenRC/SysVinit)
@@ -333,5 +333,5 @@ sudo journalctl -u zapret-daemon -xe
 sudo rc-service zapret-daemon status
 
 # Проверьте конфигурацию
-sudo zapret-daemon serve --config /etc/zapret/config.yaml
+sudo zapret-daemon serve --config /etc/zapret-ng/config.yaml
 ```

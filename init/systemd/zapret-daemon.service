@@ -6,7 +6,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/zapret-daemon serve --config /etc/zapret/config.yaml
+ExecStart=/usr/bin/zapret-daemon serve --config /etc/zapret-ng/config.yaml
 Restart=on-failure
 RestartSec=5s
 

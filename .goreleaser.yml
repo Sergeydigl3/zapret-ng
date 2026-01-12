@@ -244,7 +244,7 @@ nfpms:
     contents:
       # Binaries
       - src: ./configs/config.example.yaml
-        dst: /etc/zapret/config.yaml
+        dst: /etc/zapret-ng/config.yaml
         type: config
         file_info:
           mode: 0644

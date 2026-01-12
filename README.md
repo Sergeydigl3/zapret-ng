@@ -83,7 +83,7 @@ sudo sh install.sh --uninstall
 
 Скрипт удалит:
 - Пакет через системный пакетный менеджер
-- Конфигурационные файлы (/etc/zapret)
+- Конфигурационные файлы (/etc/zapret-ng)
 - Runtime файлы (/run/zapret)
 - Символические ссылки (/usr/local/bin/zapret)
 
@@ -130,7 +130,7 @@ make cli      # Сборка CLI
 Создайте файл конфигурации на основе примера:
 
 ```bash
-cp configs/config.example.yaml /etc/zapret/config.yaml
+cp configs/config.example.yaml /etc/zapret-ng/config.yaml
 ```
 
 Пример конфигурации:
@@ -166,7 +166,7 @@ ZAPRET_LOG_FORMAT=json
 ### Запуск демона
 
 ```bash
-# С конфигом по умолчанию (/etc/zapret/config.yaml)
+# С конфигом по умолчанию (/etc/zapret-ng/config.yaml)
 ./out/bin/zapret-daemon serve
 
 # С произвольным конфигом

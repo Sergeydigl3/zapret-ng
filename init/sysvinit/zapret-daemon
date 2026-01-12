@@ -13,7 +13,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Zapret Daemon Service"
 NAME=zapret-daemon
 DAEMON=/usr/bin/$NAME
-DAEMON_ARGS="serve --config /etc/zapret/config.yaml"
+DAEMON_ARGS="serve --config /etc/zapret-ng/config.yaml"
 PIDFILE=/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 

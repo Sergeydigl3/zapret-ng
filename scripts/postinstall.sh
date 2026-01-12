@@ -85,7 +85,7 @@ fi
 
 echo ""
 echo "Installation complete!"
-echo "Configuration file: /etc/zapret/config.yaml"
+echo "Configuration file: /etc/zapret-ng/config.yaml"
 echo "Please review and adjust the configuration before starting the service."
 
 exit 0
