@@ -4,40 +4,34 @@ package firewall
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
-	"strconv"
+	"os/exec"
 	"strings"
 	"sync"
-
-	"github.com/google/nftables"
-	"github.com/google/nftables/expr"
-	"golang.org/x/sys/unix"
 )
 
-// NftablesFirewall implements Firewall using google/nftables library.
+// NftablesFirewall implements Firewall using nft CLI.
 type NftablesFirewall struct {
-	conn     *nftables.Conn
-	table    *nftables.Table
-	chain    *nftables.Chain
-	config   *Config
-	rules    []*nftables.Rule
-	sets     []*nftables.Set
-	setCount int
-	mu       sync.Mutex
+	config     *Config
+	mu         sync.Mutex
+	ruleCount  int
+	tableName  string
+	chainName  string
+	comment    string
 }
 
 // NewNftablesFirewall creates a new nftables firewall instance.
 func NewNftablesFirewall(cfg *Config) (*NftablesFirewall, error) {
-	conn, err := nftables.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create nftables connection: %w", err)
+	// Check if nft is available
+	if _, err := exec.LookPath("nft"); err != nil {
+		return nil, fmt.Errorf("nft command not found: %w", err)
 	}
 
 	return &NftablesFirewall{
-		conn:   conn,
-		config: cfg,
-		rules:  []*nftables.Rule{},
+		config:    cfg,
+		tableName: cfg.TableName,
+		chainName: cfg.ChainName,
+		comment:   "Added by zapret-ng",
 	}, nil
 }
 
@@ -46,101 +40,112 @@ func (n *NftablesFirewall) Setup(ctx context.Context) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	// Check if table exists and clean it up
+	if err := n.runCommand("nft", "list", "tables"); err == nil {
+		// Check if our table exists
+		output, _ := exec.Command("nft", "list", "tables").Output()
+		if strings.Contains(string(output), n.tableName) {
+			// Delete existing table (this will cascade to chains and rules)
+			_ = n.runCommand("nft", "delete", "table", n.tableName)
+		}
+	}
+
 	// Create inet table (handles both IPv4 and IPv6)
-	n.table = n.conn.AddTable(&nftables.Table{
-		Family: nftables.TableFamilyINet,
-		Name:   n.config.TableName,
-	})
+	if err := n.runCommand("nft", "add", "table", n.tableName); err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
 
 	// Create output chain with filter hook
-	n.chain = n.conn.AddChain(&nftables.Chain{
-		Name:     n.config.ChainName,
-		Table:    n.table,
-		Type:     nftables.ChainTypeFilter,
-		Hooknum:  nftables.ChainHookOutput,
-		Priority: nftables.ChainPriorityFilter,
-	})
-
-	if err := n.conn.Flush(); err != nil {
-		return fmt.Errorf("failed to create table and chain: %w", err)
+	chainDef := fmt.Sprintf("{ type filter hook output priority 0; }")
+	if err := n.runCommand("nft", "add", "chain", n.tableName, n.chainName, chainDef); err != nil {
+		return fmt.Errorf("failed to create chain: %w", err)
 	}
 
 	return nil
 }
 
-// AddRule adds a firewall rule.
+// runCommand executes nft command
+func (n *NftablesFirewall) runCommand(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("command failed: %s: %w\nOutput: %s", strings.Join(append([]string{name}, args...), " "), err, string(output))
+	}
+	return nil
+}
+
+// AddRule adds a firewall rule using nft CLI.
 func (n *NftablesFirewall) AddRule(ctx context.Context, rule *Rule) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if n.table == nil || n.chain == nil {
-		return fmt.Errorf("firewall not set up, call Setup first")
+	// Build the nftables rule string
+	var ruleParts []string
+
+	// Add interface match if specified and not "any"
+	if rule.Interface != "" && rule.Interface != "any" {
+		ruleParts = append(ruleParts, fmt.Sprintf(`oifname "%s"`, rule.Interface))
 	}
 
-	// Build expressions for the rule
-	exprs := []expr.Any{}
+	// Add protocol match
+	ruleParts = append(ruleParts, rule.Protocol)
 
-	// Add interface match if specified
-	if rule.Interface != "" {
-		exprs = append(exprs,
-			&expr.Meta{Key: expr.MetaKeyOIFNAME, Register: 1},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data:     ifname(rule.Interface),
-			},
-		)
-	}
-
-	// Add protocol match (tcp or udp)
-	protoNum := uint8(unix.IPPROTO_TCP)
-	if rule.Protocol == "udp" {
-		protoNum = uint8(unix.IPPROTO_UDP)
-	}
-
-	exprs = append(exprs,
-		// Load protocol from L4 header
-		&expr.Meta{Key: expr.MetaKeyL4PROTO, Register: 1},
-		&expr.Cmp{
-			Op:       expr.CmpOpEq,
-			Register: 1,
-			Data:     []byte{protoNum},
-		},
-	)
-
-	// Add port match
-	portExprs, portSet, err := n.buildPortMatchExprs(rule.Ports)
+	// Add port match - build port specification
+	portSpec, err := n.buildPortSpec(rule.Ports)
 	if err != nil {
-		return fmt.Errorf("failed to build port expressions: %w", err)
+		return fmt.Errorf("failed to build port specification: %w", err)
 	}
-	if portSet != nil {
-		n.sets = append(n.sets, portSet)
-	}
-	exprs = append(exprs, portExprs...)
+	ruleParts = append(ruleParts, fmt.Sprintf("dport %s", portSpec))
 
 	// Add counter
-	exprs = append(exprs, &expr.Counter{})
+	ruleParts = append(ruleParts, "counter")
 
-	// Add queue target with bypass flag
-	exprs = append(exprs, &expr.Queue{
-		Num:  uint16(rule.QueueNum),
-		Flag: expr.QueueFlagBypass,
-	})
+	// Add queue with bypass
+	ruleParts = append(ruleParts, fmt.Sprintf("queue num %d bypass", rule.QueueNum))
 
-	// Add the rule
-	nftRule := n.conn.AddRule(&nftables.Rule{
-		Table: n.table,
-		Chain: n.chain,
-		Exprs: exprs,
-	})
+	// Add comment
+	ruleParts = append(ruleParts, fmt.Sprintf(`comment "%s"`, n.comment))
 
-	if err := n.conn.Flush(); err != nil {
+	// Build full rule
+	ruleStr := strings.Join(ruleParts, " ")
+
+	// Execute nft command
+	if err := n.runCommand("nft", "add", "rule", n.tableName, n.chainName, ruleStr); err != nil {
 		return fmt.Errorf("failed to add rule: %w", err)
 	}
 
-	n.rules = append(n.rules, nftRule)
-
+	n.ruleCount++
 	return nil
+}
+
+// buildPortSpec builds port specification for nftables rule.
+// Supports: single port (80), range (1024-2048), comma-separated (80,443,1024-2048).
+func (n *NftablesFirewall) buildPortSpec(ports []string) (string, error) {
+	if len(ports) == 0 {
+		return "", fmt.Errorf("no ports specified")
+	}
+
+	// Join all port specs and parse
+	var allPorts []string
+	for _, portSpec := range ports {
+		// Split by comma to handle "80,443,1024-2048" format
+		parts := strings.Split(portSpec, ",")
+		for _, part := range parts {
+			allPorts = append(allPorts, strings.TrimSpace(part))
+		}
+	}
+
+	if len(allPorts) == 0 {
+		return "", fmt.Errorf("no ports after parsing")
+	}
+
+	// If single port or range, return as-is
+	if len(allPorts) == 1 {
+		return allPorts[0], nil
+	}
+
+	// Multiple ports/ranges - use set notation { }
+	return fmt.Sprintf("{ %s }", strings.Join(allPorts, ", ")), nil
 }
 
 // RemoveAll removes all rules and cleans up the firewall setup.
@@ -148,187 +153,46 @@ func (n *NftablesFirewall) RemoveAll(ctx context.Context) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if n.table == nil {
+	// Check if table exists
+	output, err := exec.Command("nft", "list", "tables").Output()
+	if err != nil {
+		// nft command failed, nothing to clean
 		return nil
 	}
 
-	// Delete the entire table (cascades to chains and rules)
-	n.conn.DelTable(n.table)
+	if !strings.Contains(string(output), n.tableName) {
+		// Table doesn't exist, nothing to clean
+		return nil
+	}
 
-	if err := n.conn.Flush(); err != nil {
-		// Table might not exist, that's ok
-		if !strings.Contains(err.Error(), "no such file") {
-			return fmt.Errorf("failed to delete table: %w", err)
+	// Check if chain exists and delete rules with our comment
+	chainOutput, err := exec.Command("nft", "-a", "list", "chain", n.tableName, n.chainName).Output()
+	if err == nil {
+		// Parse handles of rules with our comment
+		lines := strings.Split(string(chainOutput), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, n.comment) {
+				// Extract handle number from line like: "... handle 42"
+				fields := strings.Fields(line)
+				for i, field := range fields {
+					if field == "handle" && i+1 < len(fields) {
+						handle := fields[i+1]
+						_ = n.runCommand("nft", "delete", "rule", n.tableName, n.chainName, "handle", handle)
+					}
+				}
+			}
 		}
 	}
 
-	n.table = nil
-	n.chain = nil
-	n.rules = nil
+	// Delete chain and table
+	_ = n.runCommand("nft", "delete", "chain", n.tableName, n.chainName)
+	_ = n.runCommand("nft", "delete", "table", n.tableName)
 
+	n.ruleCount = 0
 	return nil
 }
 
 // Close closes the nftables firewall.
 func (n *NftablesFirewall) Close() error {
 	return nil
-}
-
-// ifname pads interface name to 16 bytes (IFNAMSIZ)
-func ifname(name string) []byte {
-	b := make([]byte, 16)
-	copy(b, name)
-	return b
-}
-
-// buildPortMatchExprs builds nftables expressions for port matching.
-// Supports single ports (80), ranges (1024-2048), and comma-separated lists (80,443,8080-8090).
-// Returns expressions and optionally a set if multiple ports/ranges are used.
-func (n *NftablesFirewall) buildPortMatchExprs(ports []string) ([]expr.Any, *nftables.Set, error) {
-	exprs := []expr.Any{}
-
-	// Load destination port into register 1
-	exprs = append(exprs,
-		&expr.Payload{
-			DestRegister: 1,
-			Base:         expr.PayloadBaseTransportHeader,
-			Offset:       2, // Destination port offset
-			Len:          2, // Port is 2 bytes
-		},
-	)
-
-	// Parse all port specifications (handle comma-separated values)
-	var allPorts []string
-	for _, portSpec := range ports {
-		// Split by comma to handle "80,443,1024-2048" format
-		parts := strings.Split(portSpec, ",")
-		allPorts = append(allPorts, parts...)
-	}
-
-	if len(allPorts) == 1 {
-		// Single port or range
-		port := strings.TrimSpace(allPorts[0])
-		if strings.Contains(port, "-") {
-			// Port range
-			parts := strings.Split(port, "-")
-			if len(parts) != 2 {
-				return nil, nil, fmt.Errorf("invalid port range: %s", port)
-			}
-			startPort, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid start port: %s", parts[0])
-			}
-			endPort, err := strconv.ParseUint(strings.TrimSpace(parts[1]), 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid end port: %s", parts[1])
-			}
-
-			exprs = append(exprs, &expr.Range{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				FromData: binaryPort(uint16(startPort)),
-				ToData:   binaryPort(uint16(endPort)),
-			})
-		} else {
-			// Single port
-			portNum, err := strconv.ParseUint(port, 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid port: %s", port)
-			}
-
-			exprs = append(exprs, &expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data:     binaryPort(uint16(portNum)),
-			})
-		}
-		return exprs, nil, nil
-	}
-
-	// Multiple ports/ranges - create a named set
-	n.setCount++
-	setName := fmt.Sprintf("ports_%d", n.setCount)
-
-	// Determine if we need intervals (for ranges)
-	hasRanges := false
-	for _, port := range allPorts {
-		if strings.Contains(port, "-") {
-			hasRanges = true
-			break
-		}
-	}
-
-	// Create the set
-	portSet := &nftables.Set{
-		Table:    n.table,
-		Name:     setName,
-		KeyType:  nftables.TypeInetService, // Port type
-		Interval: hasRanges,
-	}
-	if err := n.conn.AddSet(portSet, nil); err != nil {
-		return nil, nil, fmt.Errorf("failed to create port set: %w", err)
-	}
-
-	// Build set elements
-	var setElements []nftables.SetElement
-	for _, port := range allPorts {
-		port = strings.TrimSpace(port)
-		if strings.Contains(port, "-") {
-			// Port range - add as interval
-			parts := strings.Split(port, "-")
-			if len(parts) != 2 {
-				return nil, nil, fmt.Errorf("invalid port range: %s", port)
-			}
-			startPort, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid start port: %s", parts[0])
-			}
-			endPort, err := strconv.ParseUint(strings.TrimSpace(parts[1]), 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid end port: %s", parts[1])
-			}
-
-			// Add interval to set
-			setElements = append(setElements,
-				nftables.SetElement{
-					Key:         binaryPort(uint16(startPort)),
-					IntervalEnd: false,
-				},
-				nftables.SetElement{
-					Key:         binaryPort(uint16(endPort + 1)),
-					IntervalEnd: true,
-				},
-			)
-		} else {
-			// Single port
-			portNum, err := strconv.ParseUint(port, 10, 16)
-			if err != nil {
-				return nil, nil, fmt.Errorf("invalid port: %s", port)
-			}
-			setElements = append(setElements, nftables.SetElement{
-				Key: binaryPort(uint16(portNum)),
-			})
-		}
-	}
-
-	// Add elements to the set
-	if err := n.conn.SetAddElements(portSet, setElements); err != nil {
-		return nil, nil, fmt.Errorf("failed to add elements to port set: %w", err)
-	}
-
-	// Add lookup expression to match against the set
-	exprs = append(exprs, &expr.Lookup{
-		SourceRegister: 1,
-		SetName:        setName,
-		SetID:          portSet.ID,
-	})
-
-	return exprs, portSet, nil
-}
-
-// binaryPort converts port to big-endian bytes (network byte order)
-func binaryPort(port uint16) []byte {
-	b := make([]byte, 2)
-	binary.BigEndian.PutUint16(b, port)
-	return b
 }
