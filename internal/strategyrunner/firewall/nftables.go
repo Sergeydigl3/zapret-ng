@@ -17,12 +17,14 @@ import (
 
 // NftablesFirewall implements Firewall using google/nftables library.
 type NftablesFirewall struct {
-	conn   *nftables.Conn
-	table  *nftables.Table
-	chain  *nftables.Chain
-	config *Config
-	rules  []*nftables.Rule
-	mu     sync.Mutex
+	conn     *nftables.Conn
+	table    *nftables.Table
+	chain    *nftables.Chain
+	config   *Config
+	rules    []*nftables.Rule
+	sets     []*nftables.Set
+	setCount int
+	mu       sync.Mutex
 }
 
 // NewNftablesFirewall creates a new nftables firewall instance.
@@ -107,9 +109,12 @@ func (n *NftablesFirewall) AddRule(ctx context.Context, rule *Rule) error {
 	)
 
 	// Add port match
-	portExprs, err := buildPortMatchExprs(rule.Ports)
+	portExprs, portSet, err := n.buildPortMatchExprs(rule.Ports)
 	if err != nil {
 		return fmt.Errorf("failed to build port expressions: %w", err)
+	}
+	if portSet != nil {
+		n.sets = append(n.sets, portSet)
 	}
 	exprs = append(exprs, portExprs...)
 
@@ -177,7 +182,9 @@ func ifname(name string) []byte {
 }
 
 // buildPortMatchExprs builds nftables expressions for port matching.
-func buildPortMatchExprs(ports []string) ([]expr.Any, error) {
+// Supports single ports (80), ranges (1024-2048), and comma-separated lists (80,443,8080-8090).
+// Returns expressions and optionally a set if multiple ports/ranges are used.
+func (n *NftablesFirewall) buildPortMatchExprs(ports []string) ([]expr.Any, *nftables.Set, error) {
 	exprs := []expr.Any{}
 
 	// Load destination port into register 1
@@ -190,22 +197,30 @@ func buildPortMatchExprs(ports []string) ([]expr.Any, error) {
 		},
 	)
 
-	if len(ports) == 1 {
+	// Parse all port specifications (handle comma-separated values)
+	var allPorts []string
+	for _, portSpec := range ports {
+		// Split by comma to handle "80,443,1024-2048" format
+		parts := strings.Split(portSpec, ",")
+		allPorts = append(allPorts, parts...)
+	}
+
+	if len(allPorts) == 1 {
 		// Single port or range
-		port := ports[0]
+		port := strings.TrimSpace(allPorts[0])
 		if strings.Contains(port, "-") {
 			// Port range
 			parts := strings.Split(port, "-")
 			if len(parts) != 2 {
-				return nil, fmt.Errorf("invalid port range: %s", port)
+				return nil, nil, fmt.Errorf("invalid port range: %s", port)
 			}
-			startPort, err := strconv.ParseUint(parts[0], 10, 16)
+			startPort, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
 			if err != nil {
-				return nil, fmt.Errorf("invalid start port: %s", parts[0])
+				return nil, nil, fmt.Errorf("invalid start port: %s", parts[0])
 			}
-			endPort, err := strconv.ParseUint(parts[1], 10, 16)
+			endPort, err := strconv.ParseUint(strings.TrimSpace(parts[1]), 10, 16)
 			if err != nil {
-				return nil, fmt.Errorf("invalid end port: %s", parts[1])
+				return nil, nil, fmt.Errorf("invalid end port: %s", parts[1])
 			}
 
 			exprs = append(exprs, &expr.Range{
@@ -218,7 +233,7 @@ func buildPortMatchExprs(ports []string) ([]expr.Any, error) {
 			// Single port
 			portNum, err := strconv.ParseUint(port, 10, 16)
 			if err != nil {
-				return nil, fmt.Errorf("invalid port: %s", port)
+				return nil, nil, fmt.Errorf("invalid port: %s", port)
 			}
 
 			exprs = append(exprs, &expr.Cmp{
@@ -227,24 +242,88 @@ func buildPortMatchExprs(ports []string) ([]expr.Any, error) {
 				Data:     binaryPort(uint16(portNum)),
 			})
 		}
-	} else {
-		// Multiple ports - use anonymous set
-		// For simplicity, we'll use bitwise OR logic with multiple rules
-		// This is a limitation - for production, consider using sets
-		// For now, just match the first port and caller should add multiple rules
-		portNum, err := strconv.ParseUint(ports[0], 10, 16)
-		if err != nil {
-			return nil, fmt.Errorf("invalid port: %s", ports[0])
-		}
-
-		exprs = append(exprs, &expr.Cmp{
-			Op:       expr.CmpOpEq,
-			Register: 1,
-			Data:     binaryPort(uint16(portNum)),
-		})
+		return exprs, nil, nil
 	}
 
-	return exprs, nil
+	// Multiple ports/ranges - create a named set
+	n.setCount++
+	setName := fmt.Sprintf("ports_%d", n.setCount)
+
+	// Determine if we need intervals (for ranges)
+	hasRanges := false
+	for _, port := range allPorts {
+		if strings.Contains(port, "-") {
+			hasRanges = true
+			break
+		}
+	}
+
+	// Create the set
+	portSet := &nftables.Set{
+		Table:    n.table,
+		Name:     setName,
+		KeyType:  nftables.TypeInetService, // Port type
+		Interval: hasRanges,
+	}
+	if err := n.conn.AddSet(portSet, nil); err != nil {
+		return nil, nil, fmt.Errorf("failed to create port set: %w", err)
+	}
+
+	// Build set elements
+	var setElements []nftables.SetElement
+	for _, port := range allPorts {
+		port = strings.TrimSpace(port)
+		if strings.Contains(port, "-") {
+			// Port range - add as interval
+			parts := strings.Split(port, "-")
+			if len(parts) != 2 {
+				return nil, nil, fmt.Errorf("invalid port range: %s", port)
+			}
+			startPort, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
+			if err != nil {
+				return nil, nil, fmt.Errorf("invalid start port: %s", parts[0])
+			}
+			endPort, err := strconv.ParseUint(strings.TrimSpace(parts[1]), 10, 16)
+			if err != nil {
+				return nil, nil, fmt.Errorf("invalid end port: %s", parts[1])
+			}
+
+			// Add interval to set
+			setElements = append(setElements,
+				nftables.SetElement{
+					Key:         binaryPort(uint16(startPort)),
+					IntervalEnd: false,
+				},
+				nftables.SetElement{
+					Key:         binaryPort(uint16(endPort + 1)),
+					IntervalEnd: true,
+				},
+			)
+		} else {
+			// Single port
+			portNum, err := strconv.ParseUint(port, 10, 16)
+			if err != nil {
+				return nil, nil, fmt.Errorf("invalid port: %s", port)
+			}
+			setElements = append(setElements, nftables.SetElement{
+				Key: binaryPort(uint16(portNum)),
+			})
+		}
+	}
+
+	// Add elements to the set
+	if err := n.conn.SetAddElements(portSet, setElements); err != nil {
+		return nil, nil, fmt.Errorf("failed to add elements to port set: %w", err)
+	}
+
+	// Add lookup expression to match against the set
+	exprs = append(exprs, &expr.Lookup{
+		SourceRegister: 1,
+		SetName:        setName,
+		SetID:          portSet.ID,
+	})
+
+	return exprs, portSet, nil
 }
 
 // binaryPort converts port to big-endian bytes (network byte order)
