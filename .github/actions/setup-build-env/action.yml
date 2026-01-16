@@ -1,0 +1,31 @@
+name: 'Setup Build Environment'
+description: 'Setup Go, protoc and generate protobuf code'
+
+inputs:
+  go-version:
+    description: 'Go version to use'
+    required: false
+    default: '1.25'
+  protoc-version:
+    description: 'Protoc version to use'
+    required: false
+    default: '28.3'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Install protoc
+      shell: bash
+      run: |
+        curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${{ inputs.protoc-version }}/protoc-${{ inputs.protoc-version }}-linux-x86_64.zip
+        unzip protoc-${{ inputs.protoc-version }}-linux-x86_64.zip -d $HOME/.local
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Generate protobuf code
+      shell: bash
+      run: make proto
